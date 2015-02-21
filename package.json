@@ -1,0 +1,8 @@
+{
+  "name": "gamesector",
+  "version": "0.0.1",
+  "dependencies": {
+    "request": "^2.53.0",
+    "minecraft-protocol": "^0.12.3"
+  }
+}
