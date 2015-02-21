@@ -1,4 +1,4 @@
-minecraft = require './servers/minecraft'
+minecraft = require './servers/minecraft/base'
 
 kind = minecraft.serverKind
 kind.provision {directory: 'tmp', port: 25565, server_type: 'vanilla', memory: 1024}, (error, server) ->

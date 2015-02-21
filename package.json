@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "dependencies": {
     "request": "^2.53.0",
-    "minecraft-protocol": "^0.12.3"
+    "minecraft-protocol": "^0.12.3",
+    "bukget-client": "0.0.2",
+    "image-size": "^0.3.5",
+    "image-type": "^2.0.2"
   }
 }
