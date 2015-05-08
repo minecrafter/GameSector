@@ -29,7 +29,7 @@ class ServerJarProvider
 # Provides provisioning of Minecraft servers.
 class MinecraftServerKind
   provision: (properties, callback) ->
-    jarProvider = new ServerJarProvider()
+    jarProvider = new ServerJarProvider
 
     if properties.port == undefined or properties.directory == undefined or properties.server_type == undefined or properties.memory == undefined
       callback new Error 'Invalid properties provided.'
@@ -47,10 +47,10 @@ class MinecraftServerKind
 
     writeFile propertiesPath, "server-port=" + properties.port
     writeFile eulaPath, "eula=true"
-    callback null, new MinecraftServer(properties.directory, properties)
-    #ms_jar = writeStream mc_dest_jar_path
-    #ms_jar.on 'close', () -> callback null, new MinecraftServer(properties.directory, properties)
-    #request(mc_src_jar).pipe ms_jar
+
+    ms_jar = writeStream destinationJarPath
+    ms_jar.on 'close', () -> callback null, new MinecraftServer(properties.directory, properties)
+    request(serverJarUri).pipe ms_jar
 
 # Provides the mechanism to allow servers to be run
 class MinecraftServer extends EventEmitter
@@ -105,5 +105,4 @@ class MinecraftServer extends EventEmitter
 
     callback()
 
-module.exports =
-  serverKind: new MinecraftServerKind
+module.exports = new MinecraftServerKind

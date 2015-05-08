@@ -5,24 +5,13 @@ fs = require 'fs'
 imageSize = require 'image-size'
 imageType = require 'image-type'
 
-reason = JSON.stringify text: 'This server is now waking up. Please wait one minute for the server to come online.'
+reason = JSON.stringify text: 'The server is now waking up. Please wait one minute for the server to come online.'
 
 loadAndValidateFavicon = (location, callback) ->
-  faviconStream = fs.createReadStream location
-  faviconChunks = []
-
-  faviconStream.on 'error', (e) ->
-    # Just proceed with setup - we don't care
-    callback e, null
-
-  faviconStream.on 'data', (chunk) ->
-    faviconChunks.push chunk
-
-  faviconStream.on 'end', () ->
-    # If the favicon is less than 64KB, use it.
-    faviconStream.close()
-    faviconBuffer = Buffer.concat faviconChunks
-
+  fs.readFile location, (err, faviconBuffer) ->
+    if err
+      # No favicon found or an I/O error. That's okay.
+      callback err, null
     if faviconBuffer.length < 65536
       try
         type = imageType faviconBuffer
@@ -30,21 +19,22 @@ loadAndValidateFavicon = (location, callback) ->
 
         if type.ext == 'png' and dimensions.width == 64 and dimensions.height == 64
           callback null, faviconBuffer.toString 'base64'
+        else
+          callback new Error("File was not an PNG file or not 64x64 in size"), null
       catch e
         callback e, null
-
-    callback new Error("Image was over 64KB (65,536 bytes) or was not a PNG file"), null
+    else
+      callback new Error("Image was over 64KB (65,536 bytes)"), null
 
 startServer = (server) ->
-  properties = readProperties path.join server.directory, "server.properties"
-
   setUp = (favicon) ->
-    idleServer = minecraft.createServer port: server.properties.port, 'online-mode': false
-    idleServer.maxPlayers = properties['max-players']
-    idleServer.motd = properties['motd']
+    console.log "Creating server"
+    idleServer = minecraft.createServer port: server.properties['server-port'], 'online-mode': false, 'max-players': server.properties['max-players'], motd: server.properties.motd
 
     if favicon?
       idleServer.favicon = favicon
+
+    console.log "Server initialized"
 
     idleServer.once 'login', (client) ->
       # Mojang is retarded so we delay the actual disconnect and clean up in hopes that the client gets the right stuff.
@@ -52,25 +42,26 @@ startServer = (server) ->
         client.end reason
 
         # But then we have minecraft-protocol in the way. Get it out of the way.
-        cleanUp = ->
+        setTimeout () ->
           idleServer.close()
           server.run()
-
-        setTimeout cleanUp, 50
+        , 20
 
       setTimeout disconnect, 250
 
   # If a favicon exists, load it
   loadAndValidateFavicon path.join(server.directory, 'server-icon.png'), (err, result) ->
+    console.log "Read favicon"
     setUp result
 
 module.exports = startServer
 
-# Test object
-test = {
+console.log "Reading server properties"
+properties = readProperties path.join 'tmp', "server.properties"
+
+test =
   directory: 'tmp'
-  properties: port: 25566
+  properties: properties
   run: -> console.log "If I were a real server, I'd be running right now."
-}
 
 startServer test
