@@ -11,7 +11,7 @@ loadAndValidateFavicon = (location, callback) ->
   fs.readFile location, (err, faviconBuffer) ->
     if err
       # No favicon found or an I/O error. That's okay.
-      callback err, null
+      return callback err, null
     if faviconBuffer.length < 65536
       try
         type = imageType faviconBuffer
@@ -37,17 +37,15 @@ startServer = (server) ->
     console.log "Server initialized"
 
     idleServer.once 'login', (client) ->
-      # Mojang is retarded so we delay the actual disconnect and clean up in hopes that the client gets the right stuff.
+      # Mojang is retarded so we delay the actual disconnect and clean up in hopes that the client gets the right packets.
       disconnect = ->
-        client.end reason
-
-        # But then we have minecraft-protocol in the way. Get it out of the way.
-        setTimeout () ->
+        client.on 'end', ->
           idleServer.close()
           server.run()
-        , 20
 
-      setTimeout disconnect, 250
+        client.end reason
+
+      setTimeout disconnect, 200
 
   # If a favicon exists, load it
   loadAndValidateFavicon path.join(server.directory, 'server-icon.png'), (err, result) ->
